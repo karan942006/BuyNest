@@ -1,0 +1,46 @@
+name: BuyNest CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-node-version: '20'
+        cache: 'npm'
+
+    - name: Validate Root Package
+      run: npm run setup --if-present
+
+    # Backend validation
+    - name: Install Backend Dependencies
+      run: |
+        cd buynest-backend
+        npm ci || npm install
+
+    - name: Build Backend (Compile TypeScript)
+      run: |
+        cd buynest-backend
+        npm run build
+
+    # Frontend validation
+    - name: Install Frontend Dependencies
+      run: |
+        cd buynest-frontend
+        npm ci || npm install
+
+    - name: Build Frontend (Compile Vite & React 19)
+      run: |
+        cd buynest-frontend
+        npm run build

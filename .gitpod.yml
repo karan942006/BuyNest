@@ -1,0 +1,11 @@
+image: gitpod/workspace-node-20
+
+ports:
+  - port: 5173
+    onOpen: open-browser
+  - port: 5000
+    onOpen: ignore
+
+tasks:
+  - init: npm install && cd buynest-backend && npm install && cd ../buynest-frontend && npm install
+    command: npm run dev
