@@ -4,12 +4,12 @@
   "description": "BuyNest - Premium E-Commerce Platform",
   "private": true,
   "scripts": {
-    "dev": "concurrently -n \"Backend,Frontend\" -c \"blue,green\" \"npm.cmd run dev --prefix buynest-backend\" \"npm.cmd run dev --prefix buynest-frontend\"",
-    "install:all": "npm.cmd install && cd buynest-backend && npm.cmd install && cd ../buynest-frontend && npm.cmd install",
-    "build:frontend": "npm.cmd run build --prefix buynest-frontend",
-    "build:backend": "npm.cmd run build --prefix buynest-backend",
-    "build": "npm.cmd run build:backend && npm.cmd run build:frontend",
-    "setup": "npm.cmd run install:all"
+    "dev": "concurrently -n \"Backend,Frontend\" -c \"blue,green\" \"npm run dev --prefix buynest-backend\" \"npm run dev --prefix buynest-frontend\"",
+    "install:all": "npm install --legacy-peer-deps && cd buynest-backend && npm install --legacy-peer-deps && cd ../buynest-frontend && npm install --legacy-peer-deps",
+    "build:frontend": "npm run build --prefix buynest-frontend",
+    "build:backend": "npm run build --prefix buynest-backend",
+    "build": "npm run build:backend && npm run build:frontend",
+    "setup": "npm run install:all"
   },
   "dependencies": {
     "concurrently": "^8.2.2"

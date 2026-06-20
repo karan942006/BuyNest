@@ -45,17 +45,17 @@ fi
 # Install dependencies if not present
 if [ ! -d "node_modules" ]; then
     echo "[INFO] Installing runner dependencies..."
-    npm install
+    npm install --legacy-peer-deps
 fi
 
 if [ ! -d "buynest-backend/node_modules" ]; then
     echo "[INFO] Installing backend dependencies..."
-    (cd buynest-backend && npm install)
+    (cd buynest-backend && npm install --legacy-peer-deps)
 fi
 
 if [ ! -d "buynest-frontend/node_modules" ]; then
     echo "[INFO] Installing frontend dependencies..."
-    (cd buynest-frontend && npm install)
+    (cd buynest-frontend && npm install --legacy-peer-deps)
 fi
 
 echo "[SUCCESS] Dependencies verified. Starting BuyNest..."

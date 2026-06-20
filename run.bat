@@ -48,19 +48,19 @@ if not exist "buynest-frontend\.env" (
 :: Check node_modules in root
 if not exist "node_modules" (
     echo [INFO] Root node_modules not found. Installing runner dependencies...
-    call npm.cmd install
+    powershell -ExecutionPolicy Bypass -Command "npm install --legacy-peer-deps"
 )
 
 :: Check node_modules in backend
 if not exist "buynest-backend\node_modules" (
     echo [INFO] Backend node_modules not found. Installing dependencies...
-    cd buynest-backend && call npm.cmd install && cd ..
+    cd buynest-backend && powershell -ExecutionPolicy Bypass -Command "npm install --legacy-peer-deps" && cd ..
 )
 
 :: Check node_modules in frontend
 if not exist "buynest-frontend\node_modules" (
     echo [INFO] Frontend node_modules not found. Installing dependencies...
-    cd buynest-frontend && call npm.cmd install && cd ..
+    cd buynest-frontend && powershell -ExecutionPolicy Bypass -Command "npm install --legacy-peer-deps" && cd ..
 )
 
 echo [SUCCESS] Dependencies verified. Starting BuyNest...
@@ -73,6 +73,6 @@ echo =======================================================================
 echo.
 
 :: Run backend and frontend concurrently in the same window
-call npm.cmd run dev
+powershell -ExecutionPolicy Bypass -Command "npm run dev"
 
 exit 0

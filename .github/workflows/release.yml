@@ -1,0 +1,155 @@
+name: Build and Release Cross-Platform Apps
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: buynest-frontend/package-lock.json
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd buynest-frontend
+          npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+
+      - name: Build Frontend
+        run: |
+          cd buynest-frontend
+          npm run build
+
+      - name: Sync Capacitor Android
+        run: |
+          cd buynest-frontend
+          npx cap sync android
+
+      - name: Build Android App (Debug & Unsigned Release APKs)
+        run: |
+          cd buynest-frontend/android
+          chmod +x ./gradlew
+          ./gradlew assembleDebug
+          ./gradlew assembleRelease
+
+      - name: Upload Android Debug APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: buynest-android-debug
+          path: buynest-frontend/android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Upload Android Release APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: buynest-android-release
+          path: buynest-frontend/android/app/build/outputs/apk/release/app-release-unsigned.apk
+
+  build-tauri:
+    name: Build Windows App
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: buynest-frontend/package-lock.json
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust Cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: buynest-frontend/src-tauri -> target
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd buynest-frontend
+          npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+
+      - name: Build Tauri Desktop App
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: 'BuyNest Release ${{ github.ref_name }}'
+          releaseBody: 'BuyNest Premium E-Commerce Platform desktop app release.'
+          releaseDraft: true
+          prerelease: false
+          projectPath: buynest-frontend
+
+  create-github-release:
+    name: Create GitHub Release and Upload APKs
+    needs: [build-android, build-tauri]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Download Android Debug APK Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: buynest-android-debug
+          path: ./artifacts/debug
+
+      - name: Download Android Release APK Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: buynest-android-release
+          path: ./artifacts/release
+
+      - name: Rename APKs for Release
+        run: |
+          mv ./artifacts/debug/app-debug.apk ./artifacts/BuyNest-Android-Debug.apk
+          mv ./artifacts/release/app-release-unsigned.apk ./artifacts/BuyNest-Android-Release-Unsigned.apk
+
+      - name: Create or Update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ./artifacts/BuyNest-Android-Debug.apk
+            ./artifacts/BuyNest-Android-Release-Unsigned.apk
+          draft: true
+          name: 'BuyNest Release ${{ github.ref_name }}'
+          body: |
+            ## 🚀 BuyNest Cross-Platform Downloads
+            
+            Welcome to the official BuyNest release!
+            
+            ### 📱 Mobile (Android)
+            - **Download BuyNest Android App (Debug APK)** - *Easiest to install and test on any Android phone (just download and click to install)*
+            - **Download BuyNest Android App (Unsigned Release APK)**
+            
+            ### 💻 Desktop (Windows)
+            - The Windows Installer (`.exe`/`.msi`) is built by the Tauri CI job and uploaded directly to this release draft.
+            
+            ---
+            *Built automatically via GitHub Actions.*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
